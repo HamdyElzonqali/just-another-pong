@@ -9,12 +9,18 @@ local MAX_SCORE = 5
 local POWERUP_START = 5
 local POWERUP_MIN_INTERVAL = 3
 
-function gameState:enter(...)
+function gameState:enter(cpuControlled)
     self.score = {0, 0}
     
     self.ball = Ball()
     self.player1 = Paddle(COLORS.RED, 15)
-    self.player2 = Paddle(COLORS.BLUE, VIRTUAL_WIDTH - 20)
+    self.cpuControlled  = cpuControlled
+    if cpuControlled then
+        self.player2 = Paddle(COLORS.BLUE, VIRTUAL_WIDTH - 20, self.ball)
+        input.action("player1")
+    else
+        self.player2 = Paddle(COLORS.BLUE, VIRTUAL_WIDTH - 20)
+    end
     
     self.cooldown = COOLDOWN
     self.ball:start()
@@ -30,6 +36,8 @@ function gameState:enter(...)
 
     self.powerups = {}
     self.powerupTimer = POWERUP_START
+
+    self.fade = 0.3
 end
 
 function gameState:exit()
@@ -37,6 +45,8 @@ function gameState:exit()
 end
 
 function gameState:update(dt)
+    self.fade = math.max(love.math.lerp(self.fade, -0.05, 8 * dt), 0)
+
     if self.scored == 0 then
         if self.cooldown > 0 then
             self.cooldown = self.cooldown - dt
@@ -49,17 +59,16 @@ function gameState:update(dt)
             camera.y = love.math.lerp(camera.y, 0, dt * 5)
             camera.rotation = love.math.lerp(camera.rotation, 0, dt * 5)
             
-            if input.anyPressed() or #(love.touch.getTouches()) > 0 then
+            if input.get 'back' then
+                state:switch("menu")
+            elseif input.anyPressed() or #(love.touch.getTouches()) > 0 then
                 self.paused = false
             end
             
             return
-        end
-        
-        if input.get 'pause' then
+        elseif input.get 'pause' or input.get 'back' then
             self.paused = true
         end
-        
         
         if self.powerupTimer > 0 then
             self.powerupTimer = self.powerupTimer - dt
@@ -68,7 +77,7 @@ function gameState:update(dt)
             local powerup = Powerup(love.math.random(7), love.math.random(30, VIRTUAL_WIDTH - 60), love.math.random(30, VIRTUAL_HEIGHT - 60))
             self.powerups[powerup] = powerup
         end
-
+        
         -- Touch Controls
         local touches = love.touch.getTouches()
         for i, id in ipairs(touches) do
@@ -108,14 +117,6 @@ function gameState:update(dt)
         end
         
         -- Keyboard and Gamepad controls
-        local player1 = input.getAxis("player1", 1)
-        
-        if player1 > 0 then
-            self.player1:moveDown()
-        elseif player1 < 0 then
-            self.player1:moveUp()
-        end
-        
         local player2 = input.getAxisRaw("player2")
         
         if player2 > 0 then
@@ -123,10 +124,20 @@ function gameState:update(dt)
         elseif player2 < 0 then
             self.player2:moveUp()
         end
+
+        local player1 = input.getAxis("player1", 1) + (self.cpuControlled and player2 or 0)
+        
+        if player1 > 0 then
+            self.player1:moveDown()
+        elseif player1 < 0 then
+            self.player1:moveUp()
+        end
+        
         
         
         if self.ball.x < 0 then
             self.score[2] = self.score[2] + 1
+            self.player1:calculateDifficulty(self.score[2])
             self.scored = 2
             self.scoreScreenAlpha = 0
             if self.score[2] >= MAX_SCORE then
@@ -139,6 +150,7 @@ function gameState:update(dt)
         
         if self.ball.x > VIRTUAL_WIDTH - self.ball.w * self.ball.scale then
             self.score[1] = self.score[1] + 1
+            self.player2:calculateDifficulty(self.score[1])
             self.scored = 1
             self.scoreScreenAlpha = 0
             if self.score[1] >= MAX_SCORE then
@@ -166,7 +178,8 @@ function gameState:update(dt)
         
         if self.ball:collides(self.player1) then
             camera:shake(1, 0.2)
-            if self.ball.y + 2 < self.player1.y + self.player1.h and self.ball.y + 2 > self.player1.y then
+            if (self.ball.x - self.ball.dx * dt + 1 > self.player1.x + self.player1.w)
+             then
                 self.ball:reflectH()
                 self.player1:push(-2, 0.1)
                 self.ball.player = self.player1
@@ -175,19 +188,20 @@ function gameState:update(dt)
                 self.ball.dy = self.ball.dy + (-(self.player1.y + self.player1.h/2) + self.ball.y) * 5
                 self.ball.dy = self.ball.dy + love.math.random(-10, 10)
             else
+                self.ball.x = self.ball.x - 0.05
                 if self.ball.y < self.player1.y then
                     self.ball.y = self.player1.y - self.ball.h * self.ball.scale
-                    self.ball.dy = -math.abs(self.ball.dy) * 1.4
-                elseif self.ball.y + 2 > self.player1.y + self.player1.h then
+                    self.ball.dy = -math.abs(self.ball.dy) * 1.1
+                elseif self.ball.y + self.ball.h * self.ball.scale / 2 > self.player1.y + self.player1.h then
                     self.ball.y = self.player1.y + self.player1.h
-                    self.ball.dy = math.abs(self.ball.dy) * 1.4
+                    self.ball.dy = math.abs(self.ball.dy) * 1.1
                 end
             end
         end
         
         if self.ball:collides(self.player2) then
             camera:shake(1, 0.2)
-            if self.ball.y + 2 < self.player2.y + self.player2.h and self.ball.y + 2 > self.player2.y then
+            if (self.ball.x + self.ball.w * self.ball.scale / 2 - self.ball.dx * dt - 1 < self.player2.x) then
                 self.ball:reflectH()
                 self.player2:push(2, 0.1)
                 self.ball.player = self.player2
@@ -196,10 +210,11 @@ function gameState:update(dt)
                 self.ball.dy = self.ball.dy + (-(self.player2.y + self.player2.h/2) + self.ball.y) * 5
                 self.ball.dy = self.ball.dy + love.math.random(-10, 10)
             else
+                self.ball.x = self.ball.x + 0.05
                 if self.ball.y < self.player2.y then
                     self.ball.y = self.player2.y - self.ball.h * self.ball.scale
                     self.ball.dy = -math.abs(self.ball.dy) * 1.4
-                elseif self.ball.y + 2 > self.player2.y + self.player2.h then
+                elseif self.ball.y + self.ball.h * self.ball.scale / 2 > self.player1.y + self.player1.h then
                     self.ball.y = self.player2.y + self.player2.h
                     self.ball.dy = math.abs(self.ball.dy) * 1.4
                 end
@@ -211,8 +226,10 @@ function gameState:update(dt)
         self.scoreScreenAlpha = math.min(self.scoreScreenAlpha + dt * 2, 0.9)
         self.scoredRotation = self.scoredRotation + dt * 0.05 * self.scoredRotationDirection
         if self.scoredRotation > math.pi * 0.005 then
+            self.scoredRotation = math.pi * 0.005
             self.scoredRotationDirection = -1
         elseif self.scoredRotation < -math.pi * 0.005 then
+            self.scoredRotation = -math.pi * 0.005
             self.scoredRotationDirection = 1
         end
 
@@ -229,12 +246,14 @@ function gameState:update(dt)
         if input.anyPressed() or #(love.touch.getTouches()) > 0 then
             if not self.won then
                 self.scored = 0
+                self.fade = 0.3
                 self.ball:start()
                 self.player1:reset()
                 self.player2:reset()
                 self.cooldown = 1.8
             else
-                state:switch("play")
+                -- go back to menu
+                state:switch("menu")
             end
         end
     end
@@ -279,7 +298,7 @@ function gameState:draw()
         local color = {unpack(COLORS.BLACK)}
         color[4] = 0.80
         love.graphics.setColor(color)
-        love.graphics.rectangle("fill", -50, -50, VIRTUAL_WIDTH + 100, VIRTUAL_HEIGHT + 100)
+        love.graphics.rectangle("fill", -100, -100, VIRTUAL_WIDTH + 200, VIRTUAL_HEIGHT + 200)
         love.graphics.setColor(COLORS.WHITE)
         love.graphics.printf("Paused", 0, VIRTUAL_HEIGHT / 2 - 15, VIRTUAL_WIDTH / 2, "center", 0, 2, 2)
 
@@ -295,7 +314,7 @@ function gameState:draw()
             love.graphics.setColor(color)
         end
 
-        love.graphics.rectangle("fill", -50, -50, VIRTUAL_WIDTH + 100, VIRTUAL_HEIGHT + 100)
+        love.graphics.rectangle("fill", -100, -100, VIRTUAL_WIDTH + 200, VIRTUAL_HEIGHT + 200)
         love.graphics.setColor(COLORS.WHITE)
 
         if not self.won then
@@ -305,9 +324,14 @@ function gameState:draw()
             love.graphics.printf("Player " .. tostring(self.scored) .. " wins!", self.scoredOffsetX * 2, VIRTUAL_HEIGHT / 2, VIRTUAL_WIDTH / 2, "center", self.scoredRotation, 2, 2, self.scoredOffsetX, self.scoredOffsetY)
         end
     elseif self.cooldown > 0 then
-        love.graphics.setColor(COLORS.YELLOW)
+        love.graphics.setColor(COLORS.GREEN)
         love.graphics.printf(string.rep(".", math.ceil(self.cooldown / 0.6)), 1, 0, VIRTUAL_WIDTH / 2, "center", 0, 2, 2)
     end
+
+    local color = {unpack(COLORS.WHITE)}
+    color[4] = self.fade
+    love.graphics.setColor(color)
+    love.graphics.rectangle("fill", -10, -10, VIRTUAL_WIDTH + 20, VIRTUAL_HEIGHT + 20)
 
     love.graphics.setColor(COLORS.RESET)
 end

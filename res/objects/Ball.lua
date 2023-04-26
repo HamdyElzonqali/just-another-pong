@@ -54,14 +54,6 @@ function object:start()
 end
 
 function object:update(dt)
-    if input.keyPressed("y") then
-        self:grow()
-    end
-
-    if input.keyPressed("h") then
-        self:shrink()
-    end
-
     self.scale = love.math.lerp(self.scale, self.size, 10 * dt)
 
     local angle = math.atan2(self.dy, self.dx)
@@ -72,7 +64,8 @@ function object:update(dt)
     -- make sure the ball can't go in a perfect vertical angle
     local absAngle = math.atan2(math.abs(self.dy), math.abs(self.dx))
     if absAngle > math.pi * 0.32 then
-        self.dy = self.dy * 0.99
+        self.dy = self.dy * 0.95
+        self.dx = self.dx + (self.dx > 0 and 1 or -1) * 0.05
     end
 
     self.rotation = self.rotation + self.speed * dt * 0.1

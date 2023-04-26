@@ -1,11 +1,13 @@
 local object = class:extend()
 
-local PRESS_DELAY = 0.15
+local PRESS_DELAY = 0.05
 local PADDLE_WIDTH = 5
+local COMPUTER_BASE_ADVANTAGE = 1.05 -- Starts 5% faster
+local COMPUTER_STEP_ADVANTAGE = 0.05 -- Increases 5% each time the opponent scores
 
 local PADDLE_SPEED = 70
 local PADDLE_MAX_SPEED = 106
-local PADDLE_MIN_SPEED = 46
+local PADDLE_MIN_SPEED = 58
 local PADDLE_POWERUP_SPEED = 12
 
 local PADDLE_SIZE = 20
@@ -29,6 +31,7 @@ function object:new(color, x, target)
 
     self.speed = PADDLE_SPEED
     self.size = PADDLE_SIZE
+    self.difficulty = COMPUTER_BASE_ADVANTAGE
 end
 
 function object:reset()
@@ -50,16 +53,18 @@ function object:update(dt)
             self.dy = 0
         end
 
-        if self.target.y < self.y + self.h / 2 - 6 then
-            self:moveUp()
-            self.timer = PRESS_DELAY
-        end
+        -- if ball is moving towards the paddle, move towards it
+        if math.abs(self.x - self.target.x) > math.abs(self.x - self.target.x - self.target.dx * dt) then
+            if self.target.y < self.y + self.h / 2 - 4 then
+                self.dy = -self.speed * self.difficulty
+                self.timer = PRESS_DELAY
+            end
 
-        if self.target.y > self.y + self.h / 2 + 6 then
-            self:moveDown()
-            self.timer = PRESS_DELAY
+            if self.target.y > self.y + self.h / 2 + 4 then
+                self.dy = self.speed * self.difficulty
+                self.timer = PRESS_DELAY
+            end
         end
-
     end
 
     self.y = self.y + self.dy * dt
@@ -85,13 +90,19 @@ function object:update(dt)
 end
 
 function object:moveUp()
+    if self.target then
+        return
+    end
+
     self.dy = -self.speed
-    self.timer = PRESS_DELAY
 end
 
 function object:moveDown()
+    if self.target then
+        return
+    end
+
     self.dy = self.speed
-    self.timer = PRESS_DELAY
 end
 
 function object:stop()
@@ -106,6 +117,10 @@ end
 function object:drawShadow()
     love.graphics.setColor(COLORS.GREY)
     love.graphics.rectangle("fill", self.x + 1, self.y + 1, self.w, self.h)
+end
+
+function object:calculateDifficulty(opponentScore)
+    self.difficulty = COMPUTER_BASE_ADVANTAGE + COMPUTER_STEP_ADVANTAGE * opponentScore
 end
 
 function object:push(amount, time)

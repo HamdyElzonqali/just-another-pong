@@ -140,7 +140,7 @@ end
 --- 
 ---Checks if a mouse button is just pressed.
 ---
----@param button string
+---@param button number
 ---@return boolean
 function Input.mousePressed(button)
     if Input.mpressed[button] then
@@ -152,7 +152,7 @@ end
 ---
 ---Checks if a mouse button is just released.
 ---
----@param button string
+---@param button number
 ---@return boolean
 function Input.mouseReleased(button)
     if Input.mreleased[button] then
@@ -164,7 +164,7 @@ end
 ---
 ---Checks if a mouse button is down.
 ---
----@param button string
+---@param button number
 ---@return boolean
 function Input.mouse(button)
     return Input.mdown[button]
@@ -809,7 +809,6 @@ function action:check(gamepadId)
                 id = nil
             end
             if Input.gamepad(key, id or gamepadId) then
-                print(key, id or gamepadId)
                 return true
             end
         end

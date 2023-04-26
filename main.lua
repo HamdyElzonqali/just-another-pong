@@ -16,6 +16,11 @@ WINDOW_HEIGHT = 540
 VIRTUAL_WIDTH = 160
 VIRTUAL_HEIGHT = 90
 
+SHOW_BRANDING = false
+
+gSound = true
+gMusic = true
+
 COLORS = {
     RESET       = {1, 1, 1, 1},
     WHITE       = {0.980, 0.980, 0.980, 1}, -- #fafafa
@@ -24,8 +29,10 @@ COLORS = {
     RED         = {0.906, 0.349, 0.322, 1}, -- #e75952
     GREY        = {0.831, 0.831, 0.831, 1}, -- #d4d4d4
     YELLOW      = {0.976, 0.827, 0.506, 1}, -- #f9d381
+    GREEN       = {0.553, 0.929, 0.655, 1}, -- #8deda7
+    ORANGE      = {0.918, 0.686, 0.302, 1}, -- #eaaf4d
     LIGHT_BLUE  = {0.604, 0.820, 0.976, 1}, -- #9ad1f9
-    LIGHT_RED   = {0.976, 0.579, 0.541, 1} -- #f9938a
+    LIGHT_RED   = {0.976, 0.579, 0.541, 1}, -- #f9938a
 }
 
 
@@ -48,7 +55,6 @@ love.graphics.setFont(FONTS.MAIN)
 state:add("logo", require "res.states.Logo")
 state:add("menu", require "res.states.Menu")
 state:add("play", require "res.states.Play")
-state:add("playCPU", require "res.states.PlayCPU")
 
 -- INPUT
 input.setup()
@@ -74,8 +80,12 @@ input.action ("player2")
         :bindGamepad("dpdown", 2)
 
 input.action("pause")
-    :bindKeyPressed("escape", "p")
+    :bindKeyPressed("p")
     :bindGamepadPressed("start")
+
+input.action("back")
+    :bindKeyPressed("escape", "backspace")
+    :bindGamepadPressed("back")
 
 -- lerp
 love.math.lerp = function (a, b, t)
@@ -83,15 +93,24 @@ love.math.lerp = function (a, b, t)
 end
 
 function love.load()
-    -- Start with the logo state.
-    state:switch("play")
+    -- Start with the either the logo or the menu state.
+    if SHOW_BRANDING then
+        state:switch("logo")
+    else
+        state:switch("menu")
+    end
 
     -- Setting the resolution
     camera:setVirtualDimensions(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
 
 end
 
+
+local CAP = 1 / 20
 function love.update(dt)
+    if dt > CAP then
+         return
+    end
     -- Update the current state.
     state:update(dt)
 
