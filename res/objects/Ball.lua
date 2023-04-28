@@ -72,6 +72,7 @@ function object:update(dt)
 
     if self.y < 0 then
         self:reflectV()
+        playSound("res/audio/wall.wav", 0.8 * (self.scale / 1.5))
         self.y = 0
         self.dy = self.dy * 1.005
         camera:shake(0.6, 0.15)
@@ -79,6 +80,7 @@ function object:update(dt)
 
     if self.y > VIRTUAL_HEIGHT - self.h then
         self:reflectV()
+        playSound("res/audio/wall.wav", 0.8 * (self.scale / 1.5))
         self.y = VIRTUAL_HEIGHT - self.h
         self.dy = self.dy * 1.001
         camera:shake(0.6, 0.15)
@@ -101,6 +103,7 @@ function object:update(dt)
             local particle =  FireParticle(self.x + self.w / 2, self.y + self.h / 2)
             self.particles[particle] = particle
         end
+        --playSound("res/audio/fire.wav", love.math.random() * 0.2, 0.8 + love.math.random() * 0.4)
     end
 
     for particle, _ in pairs(self.particles) do

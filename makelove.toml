@@ -1,5 +1,5 @@
 name = "just-another-pong"
-default_targets = ["win32", "win64", "lovejs", "macos", "appimage"]
+default_targets = ["win32", "win64", "lovejs", "macos"]
 build_directory = "makelove-build"
 
 love_files = [
@@ -7,3 +7,29 @@ love_files = [
     "-*/.*",
 ]
 
+icon_file = "icon.png"
+
+[windows]
+[windows.exe_metadata]
+FileDescription = "Just another pong game made by Hamdy HamdyElzanqali"
+FileVersion = "0.1"
+CompanyName = "A game by Hamdy Elzonqali."
+LegalCopyright = "Copyright © 2023 CYFO GAMES"
+ProductName = "PONG" # "LÖVE"
+ProductVersion = "0.1"
+OriginalFilename = "pong.exe"
+
+[macos]
+[macos.app_metadata]
+CFBundleName = "PONG"
+CFBundleIdentifier = "com.cyfo.pong"
+NSHumanReadableCopyright = "Copyright © 2023 CYFO GAMES"
+CFBundleShortVersionString = "0.1"
+
+[linux]
+[linux.desktop_file_metadata]
+Comment="Just another pong game..."
+Categories="Game;"
+
+[lovejs]
+title = "Just Another Pong"

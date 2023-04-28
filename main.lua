@@ -16,10 +16,56 @@ WINDOW_HEIGHT = 540
 VIRTUAL_WIDTH = 160
 VIRTUAL_HEIGHT = 90
 
-SHOW_BRANDING = false
+IS_MOBILE = love.system.getOS() == "Android" or love.system.getOS() == "iOS"
+
+SHOW_BRANDING = true
 
 gSound = true
 gMusic = true
+
+local _sounds = {}
+function playSound(sound, volume, pitch)
+    if gSound then
+        if not _sounds[sound] then
+            _sounds[sound] = love.audio.newSource(sound, "static")
+        end
+
+        if pitch then
+            _sounds[sound]:setPitch(pitch)
+        end
+
+        if volume then
+            _sounds[sound]:setVolume(volume)
+        end
+
+        _sounds[sound]:play()
+    end
+end
+
+local _music = {}
+function playMusic(music, volume)
+    if gMusic then
+        if not _music[music] then
+            _music[music] = love.audio.newSource(music, "stream")
+            _music[music]:setLooping(true)
+        end
+
+        if volume then
+            _music[music]:setVolume(volume)
+        end
+
+        _music[music]:setLooping(true)
+
+        _music[music]:play()
+    end
+end
+
+function stopMusic(music)
+    if _music[music] then
+        _music[music]:stop()
+    end
+end
+
 
 COLORS = {
     RESET       = {1, 1, 1, 1},
@@ -86,6 +132,27 @@ input.action("pause")
 input.action("back")
     :bindKeyPressed("escape", "backspace")
     :bindGamepadPressed("back")
+
+input.action("ui_confirm")
+    :bindKeyPressed("return", "space")
+    :bindGamepadPressed("a", "b")
+
+input.action("ui_left")
+    :bindKeyPressed("a", "left")
+    :bindGamepadPressed("left")
+
+input.action("ui_right")
+    :bindKeyPressed("d", "right")
+    :bindGamepadPressed("right")
+
+input.action("ui_up")
+    :bindKeyPressed("w", "up")
+    :bindGamepadPressed("up")
+
+input.action("ui_down")
+    :bindKeyPressed("s", "down")
+    :bindGamepadPressed("down")
+
 
 -- lerp
 love.math.lerp = function (a, b, t)

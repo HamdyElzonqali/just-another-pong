@@ -1,6 +1,6 @@
 local gameState = {}
 
-local PAUSE_TIME = 1.5
+local PAUSE_TIME = 1.3
 
 local SmokeParticle = require("res.objects.SmokeParticle")
 
@@ -16,7 +16,9 @@ function gameState:enter(...)
         self.particles[particle] = particle
     end
 
-    camera:shake(1.5, 0.3)
+    camera:shake(1.1, 0.2)
+
+    playSound("res/audio/logo.wav", 0.8)
 end
 
 function gameState:exit()
@@ -33,7 +35,7 @@ function gameState:update(dt)
         end
     end
 
-    if self.finishing then
+    if self.finishing or input.anyPressed() or (#love.touch.getTouches()) > 0 then
         state:switch("menu")
         camera:shake(1.25, 0.25)
     end

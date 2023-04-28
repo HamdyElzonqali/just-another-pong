@@ -70,6 +70,8 @@ function object:new(type, x, y)
     self.rotationDirection = love.math.random(2) == 1 and 1 or -1
 
     self.timer = LIFE_TIME
+
+    playSound("res/audio/powerup_show.wav", 0.4)
 end
 
 function object:pick(player, ball)
@@ -88,6 +90,8 @@ function object:pick(player, ball)
         local particle = SmokeParticle(self.x + love.math.random(-4, 4), self.y + love.math.random(-4, 4))
         ball.particles[particle] = particle
     end
+
+    playSound("res/audio/powerup_pick.wav", 0.5)
 end
 
 function object:update(dt)
